@@ -27,7 +27,7 @@ router.post("/register", authMiddleware, authorizeRoles("Admin"), async (req, re
     if (existingUser) {
       return res.status(400).json({ message: "User already exists" });
     }
-    const salt = await bcrypt.genSalt(10); // Generate a salt
+    const salt = await bcrypt.genSalt(10); 
 
     const hashedPassword = await bcrypt.hash(password, salt);
 
@@ -80,20 +80,16 @@ router.post("/forgetpassword", async (req, res) => {
       return res.status(400).json({ message: "User not found" });
     }
 
-    // Generate a secure random token
     const resetToken = crypto.randomBytes(32).toString("hex");
 
-    // Store **plain** token in DB (DO NOT hash it)
     user.resetToken = resetToken;
-    user.resetTokenExpiry = Date.now() + 3600000; // 1 hour expiry
+    user.resetTokenExpiry = Date.now() + 3600000; 
 
     await user.save();
 
-    // Construct reset link
     const resetLink = `http://localhost:5173/ResetPassword/${resetToken}`;
     console.log("Reset Link Sent:", resetLink);
 
-    // Setup email transport
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: process.env.SMTP_PORT,
@@ -148,21 +144,17 @@ router.post("/resetpassword/:token", async (req, res) => {
 
     console.log("User Before Password Update:", user);
 
-    // ✅ Hash the new password
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     console.log("New Hashed Password Before Saving:", hashedPassword);
 
-    user.password = hashedPassword; // Assign hashed password
-    user.markModified("password"); // ✅ Ensure Mongoose detects the change
+    user.password = hashedPassword; 
+    user.markModified("password"); 
 
-    // ✅ Remove reset token fields
     user.resetToken = undefined;
     user.resetTokenExpiry = undefined;
 
-    // ✅ Save the user with the new password
     await user.save();
 
-    // ✅ Fetch and log the stored hashed password after saving
     const updatedUser = await User.findById(user._id);
     console.log("Stored Hashed Password After Saving:", updatedUser.password);
 
@@ -177,7 +169,7 @@ router.post("/resetpassword/:token", async (req, res) => {
 
 router.get("/users", authMiddleware,authorizeRoles("Admin"), async (req, res) => {
   try {
-    const users = await User.find({}, "-password"); // Excludes passwords
+    const users = await User.find({}, "-password"); 
     res.json(users);
   } catch (error) {
     console.error(" Error fetching users:", error);
@@ -240,7 +232,7 @@ router.delete("/user/:id", authMiddleware, authorizeRoles("Admin"), async (req, 
 // Getting agents
 router.get("/agents", async (req, res) => {
   try {
-    const agents = await User.find({ role: "support Agent" }); // Assuming agents have role 'support'
+    const agents = await User.find({ role: "support Agent" }); 
     res.json(agents);
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });

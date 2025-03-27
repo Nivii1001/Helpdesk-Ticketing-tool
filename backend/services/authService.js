@@ -1,6 +1,5 @@
 const API_URL = "http://localhost:3000/api/auth";
 
-// Register User
 export const registerUser = async (userData) => {
   try {
     const response = await fetch(`${API_URL}/register`, {
@@ -20,7 +19,6 @@ export const registerUser = async (userData) => {
   }
 };
 
-// Login User
 export const loginUser = async (email, password) => {
   try {
     const response = await fetch(`${API_URL}/login`, {
@@ -32,7 +30,6 @@ export const loginUser = async (email, password) => {
     const data = await response.json();
     if (!response.ok) throw new Error(data.message);
 
-    // Store JWT token and role
     localStorage.setItem("token", data.token);
     localStorage.setItem("role", data.user.role);
 

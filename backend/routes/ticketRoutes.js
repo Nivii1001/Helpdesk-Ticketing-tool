@@ -4,21 +4,20 @@ const User = require("../models/User");
 const multer = require("multer");
 const { authMiddleware, authorizeRoles } = require("../middleware/authMiddleware");
 const Ticket = require("../models/Ticket");
-
+const  Comment= require("../models/Comment");
 const router = express.Router();
 
-// Configure Multer for File Uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "uploads/"); // Save files to "uploads" folder
+    cb(null, "uploads/"); 
   },
   filename: (req, file, cb) => {
-    cb(null, `${Date.now()}-${file.originalname}`); // Unique filenames
+    cb(null, `${Date.now()}-${file.originalname}`); 
   },
 });
 const upload = multer({ 
   storage, 
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  limits: { fileSize: 5 * 1024 * 1024 }, 
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith("image/") || file.mimetype === "application/pdf") {
       cb(null, true);
@@ -29,7 +28,6 @@ const upload = multer({
 });
 
 
-// Helper function to generate a unique ticket ID
 const generateTicketId = () => `TKT-${Date.now()}`;
 
 // Create Ticket Route - Only Authenticated Users
@@ -46,16 +44,16 @@ router.post("/create", authMiddleware, upload.array("attachments", 5), async (re
     const ticketId = generateTicketId();
 
     const newTicket = new Ticket({
-      createdBy: req.user._id, // Ensure `createdBy` is set correctly
+      createdBy: req.user._id, 
       title,
       description,
       user: req.user._id,
       ticketId,
       attachments: req.files.map((file) => ({
-        filename: file.filename, // Use the new disk-stored filename
+        filename: file.filename, 
         mimetype: file.mimetype,
         size: file.size,
-        path: `/uploads/${file.filename}`, // Store the file path
+        path: `/uploads/${file.filename}`, 
       })),
     });
     
@@ -69,29 +67,33 @@ router.post("/create", authMiddleware, upload.array("attachments", 5), async (re
 
 // Get All Tickets - Only Support Agents & Admins
 router.get("/all", authMiddleware, authorizeRoles("Support Agent", "Admin"), async (req, res) => {
-  try {
-    console.log("Authenticated User:", req.user);
-    const tickets = await Ticket.find().populate("user", "username email");
-    console.log("Fetched Tickets:", tickets);
+    try {
+        console.log("Authenticated User:", req.user);
+        const tickets = await Ticket.find()
+            .populate("user", "username email")
+            .populate({
+                path: "assignedTo",
+                select: "username email",
+                model: "User",
+            }); 
 
-    res.json(tickets);
-  } catch (error) {
-    console.error("Error fetching tickets:", error);
-    res.status(500).json({ message: "Error fetching tickets" });
-  }
+        console.log("Fetched Tickets:", tickets);
+        res.json(tickets);
+    } catch (error) {
+        console.error("Error fetching tickets:", error);
+        res.status(500).json({ message: "Error fetching tickets" });
+    }
 });
 // Fetch all support agents
 router.get("/agents", async (req, res) => {
   try {
     console.log("Fetching support agents...");
 
-    // Check DB connection
     if (!mongoose.connection.readyState) {
       console.error("Database is not connected");
       return res.status(500).json({ message: "Database connection error" });
     }
 
-    // Fetch agents
     const agents = await User.find({ role: "Support Agent" }).select("username email");
     
     console.log("Agents found:", agents);
@@ -107,55 +109,75 @@ router.get("/agents", async (req, res) => {
   }
 });
 
+// Get Unassigned Tickets for Assignment
+router.get("/unassigned", authMiddleware, authorizeRoles("Admin"), async (req, res) => {
+    try {
+        const unassignedTickets = await Ticket.find({ assignedTo: null })
+            .populate("user", "username email");
 
-// Assign ticket to a support agent
-router.put("/assign/:ticketId", authMiddleware, authorizeRoles("Admin"), async (req, res) => {
-  try {
-    const { ticketId } = req.params;
-    const { assignedTo } = req.body;
-
-    console.log("Assigning Ticket:", ticketId, "to Agent:", assignedTo);
-
-    let ticket = await Ticket.findById(ticketId) || await Ticket.findOne({ ticketId });
-
-    if (!ticket) {
-      console.error(" Ticket not found:", ticketId);
-      return res.status(404).json({ message: "Ticket not found" });
+        res.json(unassignedTickets);
+    } catch (error) {
+        console.error("Error fetching unassigned tickets:", error);
+        res.status(500).json({ message: "Error fetching unassigned tickets", error: error.message });
     }
-
-    console.log("Ticket Found:");
-
-    if (!mongoose.Types.ObjectId.isValid(assignedTo)) {
-      console.error("Invalid Agent ID:", assignedTo);
-      return res.status(400).json({ message: "Invalid support agent ID" });
-    }
-
-    const agent = await User.findById(assignedTo);
-    if (!agent || agent.role !== "Support Agent") {
-      console.error("Invalid or non-agent user:", assignedTo);
-      return res.status(400).json({ message: "Invalid support agent" });
-    }
-
-    // Assign ticket and disable validation for missing fields
-    ticket.assignedTo = assignedTo;
-    await ticket.save({ validateBeforeSave: false });
-
-    console.log(" Ticket assigned successfully:", ticket);
-    res.json({ message: "Ticket assigned successfully", ticket });
-
-  } catch (error) {
-    console.error(" Error assigning ticket:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
-  }
 });
 
+// Modify the assign route to update status
+router.put("/assign/:ticketId", authMiddleware, authorizeRoles("Admin"), async (req, res) => {
+    try {
+        const { ticketId } = req.params;
+        const { assignedTo } = req.body;
+
+        console.log("Assigning Ticket:", ticketId, "to Agent:", assignedTo);
+
+        let ticket = await Ticket.findById(ticketId) || await Ticket.findOne({ ticketId });
+
+        if (!ticket) {
+            console.error(" Ticket not found:", ticketId);
+            return res.status(404).json({ message: "Ticket not found" });
+        }
+
+        console.log("Ticket Found:");
+
+        if (!mongoose.Types.ObjectId.isValid(assignedTo)) {
+            console.error("Invalid Agent ID:", assignedTo);
+            return res.status(400).json({ message: "Invalid support agent ID" });
+        }
+
+        const agent = await User.findById(assignedTo);
+        if (!agent || agent.role !== "Support Agent") {
+            console.error("Invalid or non-agent user:", assignedTo);
+            return res.status(400).json({ message: "Invalid support agent" });
+        }
+
+        ticket.assignedTo = assignedTo;
+        ticket.status = "In Progress";
+        await ticket.save({ validateBeforeSave: false });
+
+        console.log(" Ticket assigned successfully:", ticket);
+        res.json({ message: "Ticket assigned successfully", ticket });
+
+    } catch (error) {
+        console.error(" Error assigning ticket:", error);
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+});
 
 // Get User's Tickets - Only Authenticated Users
 router.get("/my-tickets", authMiddleware, async (req, res) => {
   try {
     const userTickets = await Ticket.find({ user: req.user._id })
-      .populate("assignedTo", "username email") // Populate assigned agent details
-      .populate("user", "username email"); // Populate user details
+      .populate({
+        path: "assignedTo",
+        select: "username email", 
+        model: "User", 
+      })
+      .populate({
+        path: "user",
+        select: "username email",
+      });
+
+    console.log("Fetched Tickets:", JSON.stringify(userTickets, null, 2)); 
 
     res.json(userTickets);
   } catch (error) {
@@ -164,26 +186,83 @@ router.get("/my-tickets", authMiddleware, async (req, res) => {
   }
 });
 
+router.get("/agent/tickets", authMiddleware, authorizeRoles("Support Agent"), async (req, res) => {
+  try {
+      const agentTickets = await Ticket.find({ assignedTo: req.user._id })
+          .populate("user", "username email");
+
+      res.json(agentTickets);
+  } catch (error) {
+      console.error("Error fetching agent tickets:", error);
+      res.status(500).json({ message: "Error fetching agent tickets", error: error.message });
+  }
+});
 // ==================== UPDATE TICKET STATUS ====================
 router.put("/status/:ticketId", authMiddleware, async (req, res) => {
   try {
-    const { ticketId } = req.params;
-    const { status } = req.body;
+      const { ticketId } = req.params;
+      const { status } = req.body;
 
-    const ticket = await Ticket.findById(ticketId);
-    if (!ticket) {
-      return res.status(404).json({ message: "Ticket not found" });
-    }
+      console.log("Updating ticket status:", ticketId, status);
+      console.log("Request user:", req.user); 
 
-    ticket.status = status;
-    await ticket.save();
+      const ticket = await Ticket.findById(ticketId);
+      if (!ticket) {
+          console.log("Ticket not found:", ticketId);
+          return res.status(404).json({ message: "Ticket not found" });
+      }
 
-    // Notify admin & user about status update via WebSocket
-    io.getIO().emit("ticketStatusUpdated", { ticketId, status });
+      console.log("Ticket found:", ticket); 
 
-    res.json({ message: "Ticket status updated successfully", ticket });
+      ticket.status = status;
+      await ticket.save();
+
+      console.log("Ticket status updated successfully:", ticketId, status);
+
+      res.json({ message: "Ticket status updated successfully", ticket });
   } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
+      console.error("Error updating ticket status:", error);
+      res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+// Get single ticket details and comments
+router.get("/:ticketId", authMiddleware, async (req, res) => {
+  try {
+      const ticket = await Ticket.findById(req.params.ticketId)
+          .populate('user')
+          .populate('assignedTo');
+
+      if (!ticket) {
+          return res.status(404).json({ message: "Ticket not found" });
+      }
+
+      const comments = await Comment.find({ ticket: req.params.ticketId })
+          .populate('user');
+
+      res.json({ ticket, comments });
+  } catch (error) {
+      res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
+// Create a comment
+router.post("/:ticketId/comments", authMiddleware, async (req, res) => {
+  try {
+      const { text } = req.body;
+      if (!text || text.trim() === "") {
+          return res.status(400).json({ message: "Comment text is required." });
+      }
+      const newComment = new Comment({
+          text: text,
+          user: req.user._id,
+          ticket: req.params.ticketId,
+      });
+
+      await newComment.save();
+
+      res.status(201).json(newComment);
+  } catch (error) {
+      res.status(500).json({ message: "Server error", error: error.message });
   }
 });
 

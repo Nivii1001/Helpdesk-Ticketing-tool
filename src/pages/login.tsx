@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom"; // For redirection
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
@@ -11,11 +11,21 @@ function Login() {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  // Handle form submission
+  // ⬇ Prevent navigating back after logout
+  useEffect(() => {
+    localStorage.removeItem("token"); // Ensure token is cleared on login page load
+    localStorage.removeItem("user");
+
+    window.history.pushState(null, "", window.location.href);
+    window.onpopstate = () => {
+      navigate("/login", { replace: true }); // Redirect to login if back button is pressed
+    };
+  }, [navigate]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(""); // Clear previous errors
-  
+    setError("");
+
     try {
       const response = await fetch("http://localhost:3000/api/auth/login", {
         method: "POST",
@@ -24,45 +34,44 @@ function Login() {
         },
         body: JSON.stringify({ email, password }),
       });
-  
+
       const data = await response.json();
-      console.log("Login Response Data:", data); // Debugging output
-  
+      console.log("Login Response Data:", data);
+
       if (!response.ok) {
         throw new Error(data.message || "Login failed");
       }
-  
-      // Store user and role properly
+
       if (!data.user || !data.user.role) {
         throw new Error("Role not found in response.");
       }
-  
+
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
-  
-      console.log("Stored User Data:", localStorage.getItem("user")); // Check in console
-  
-      // Redirect based on role
+
+      console.log("Stored User Data:", localStorage.getItem("user"));
+
       if (data.user.role === "Admin") {
         navigate("/admin-dashboard", { replace: true });
       } else if (data.user.role === "User") {
-        navigate("/CreateTicket", { replace: true });
+        navigate("/UserDashboard", { replace: true });
       } else if (data.user.role === "Support Agent") {
-        navigate("/support-dashboard", { replace: true });
+        navigate("/SupportDashboard", { replace: true });
       } else {
         navigate("/dashboard", { replace: true });
       }
     } catch (err) {
       setError("An error occurred while logging in.");
-      console.error(err); // Log error for debugging
+      console.error(err);
     }
   };
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-r from-blue-500 to-purple-600 p-6">
       <Card className="w-full max-w-md shadow-xl rounded-lg border bg-white p-6">
         <CardHeader>
           <CardTitle className="text-center text-3xl font-bold text-gray-800">
-            Welcome Back
+            Welcome!!!
           </CardTitle>
           <p className="text-center text-gray-500 text-sm">
             Please login to your account
@@ -87,8 +96,6 @@ function Login() {
                 required
               />
             </div>
-
-            {/* Password Field */}
             <div className="space-y-2">
               <Label htmlFor="password" className="text-gray-700 font-medium">
                 Password
@@ -107,7 +114,6 @@ function Login() {
               </a>
             </div>
 
-            {/* Login Button */}
             <Button
               type="submit"
               className="w-full bg-blue-600 hover:bg-blue-700 transition duration-300 text-white font-medium py-2 rounded-md text-lg"
@@ -115,7 +121,6 @@ function Login() {
               Login
             </Button>
 
-            {/* Sign Up Link */}
             <p className="text-center text-sm text-gray-600 mt-4">
               Don't have an account?{" "}
               <a href="/register" className="text-blue-600 hover:underline font-medium">

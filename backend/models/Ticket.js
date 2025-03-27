@@ -1,6 +1,5 @@
-// const mongoose = require("mongoose");
 const mongoose = require("mongoose");
-const User = require("../models/User"); // Ensure correct path
+const User = require("../models/User");
 
 const TicketSchema = new mongoose.Schema(
   {
@@ -29,20 +28,25 @@ const TicketSchema = new mongoose.Schema(
        ref: "User", 
        required: true 
       },
+      user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true
+      },
     assignedTo: { type: mongoose.Schema.Types.ObjectId, 
       ref: "User", 
       default: null 
-    }, // Assigned agen
+    }, 
+
     status: {
       type: String,
-      enum: ["Open", "In Progress", "Resolved"],
+      enum: ["Open", "In Progress", "Closed"],
       default: "Open",
     },
   },
   { timestamps: true }
 );
 
-// Generate ticketId if not provided
 TicketSchema.pre("save", function (next) {
   if (!this.ticketId) {
     this.ticketId = `TKT-${Date.now()}`;

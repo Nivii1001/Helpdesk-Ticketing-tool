@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import { Textarea } from "../components/ui/textarea";
-import { Label } from "../components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 function CreateTicket() {
   const [title, setTitle] = useState("");
@@ -69,7 +69,6 @@ function CreateTicket() {
         {success && <p className="text-green-600 mb-4">{success}</p>}
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Title Field */}
           <div>
             <Label className="text-lg font-semibold">Title</Label>
             <Input
@@ -81,7 +80,6 @@ function CreateTicket() {
             />
           </div>
 
-          {/* Description Field */}
           <div>
             <Label className="text-lg font-semibold">Description</Label>
             <Textarea
@@ -92,11 +90,9 @@ function CreateTicket() {
             />
           </div>
 
-          {/* Attachments Field */}
           <div>
             <Label className="text-lg font-semibold">Attachments</Label>
             <Input type="file" multiple onChange={handleFileChange} className="w-full text-lg" />
-            {/* Display Selected Files */}
             {attachments.length > 0 && (
               <div className="mt-2">
                 <p className="text-gray-600 font-medium">Selected Files:</p>
@@ -109,7 +105,6 @@ function CreateTicket() {
             )}
           </div>
 
-          {/* Submit Button */}
           <div className="flex justify-center">
             <Button type="submit" className="w-1/3 bg-blue-600 hover:bg-blue-700 transition duration-300 text-white font-medium py-3 rounded-md text-lg">
               Submit Ticket

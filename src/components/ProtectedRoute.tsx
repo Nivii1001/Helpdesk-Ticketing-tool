@@ -23,7 +23,7 @@ const ProtectedRoute = ({ allowedRoles }: { allowedRoles: string[] }) => {
 
   if (!allowedRoles.includes(user.role)) {
     console.warn(`[ProtectedRoute] Unauthorized access for role: ${user.role}. Redirecting...`);
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/login" replace />;
   }
 
   return <Outlet />;

@@ -1,36 +1,35 @@
 import { useEffect, useState } from "react";
 
-const API_URL = "http://localhost:3000/api"; // Update as needed
+const API_URL = "http://localhost:3000/api"; 
 
 const AssignTickets = () => {
   const [tickets, setTickets] = useState([]);
   const [agents, setAgents] = useState([]);
-  const [selectedAgents, setSelectedAgents] = useState({}); // Store selected agents for each ticket
+  const [selectedAgents, setSelectedAgents] = useState({}); 
 
   useEffect(() => {
     fetchTickets();
     fetchAgents();
   }, []);
 
-  // Fetch Open Tickets
+  
   const fetchTickets = async () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) return alert("No token found, please log in again.");
 
-      const response = await fetch(`${API_URL}/tickets/all`, {
+      const response = await fetch(`${API_URL}/tickets/unassigned`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
 
       if (!Array.isArray(data)) throw new Error("API did not return an array");
-      setTickets(data.filter(ticket => ticket.status === "Open")); // Show only open tickets
+      setTickets(data); 
     } catch (error) {
       console.error("Error fetching tickets:", error);
     }
   };
 
-  // Fetch Support Agents
   const fetchAgents = async () => {
     try {
       const response = await fetch(`${API_URL}/tickets/agents`);
@@ -43,9 +42,8 @@ const AssignTickets = () => {
     }
   };
 
-  // Handle Assign Ticket
   const handleAssign = async (ticketId) => {
-    const assignedTo = selectedAgents[ticketId]; // Get selected agent for this ticket
+    const assignedTo = selectedAgents[ticketId]; 
     if (!assignedTo) return alert("Please select an agent");
 
     const token = localStorage.getItem("token");
@@ -65,7 +63,7 @@ const AssignTickets = () => {
       if (!response.ok) throw new Error(result.message || "Error assigning ticket");
 
       alert("Ticket assigned successfully!");
-      fetchTickets(); // Refresh tickets list
+      fetchTickets(); 
     } catch (error) {
       console.error("Error assigning ticket:", error);
       alert(`Error: ${error.message}`);
@@ -88,7 +86,7 @@ const AssignTickets = () => {
         </thead>
         <tbody>
           {tickets.length > 0 ? (
-            tickets.map(ticket => (
+            tickets.map((ticket) => (
               <tr key={ticket._id} className="border">
                 <td className="p-2 border">{ticket.ticketId}</td>
                 <td className="p-2 border">{ticket.title}</td>
@@ -102,7 +100,7 @@ const AssignTickets = () => {
                     }
                   >
                     <option value="">Select Agent</option>
-                    {agents.map(agent => (
+                    {agents.map((agent) => (
                       <option key={agent._id} value={agent._id}>
                         {agent.username}
                       </option>
@@ -121,7 +119,9 @@ const AssignTickets = () => {
             ))
           ) : (
             <tr>
-              <td colSpan="5" className="text-center p-4">No open tickets</td>
+              <td colSpan="5" className="text-center p-4">
+                No unassigned tickets
+              </td>
             </tr>
           )}
         </tbody>

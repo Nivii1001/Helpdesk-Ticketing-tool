@@ -6,7 +6,7 @@ import { Label } from "../components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 
 function ResetPassword() {
-  const { token } = useParams(); // Get token from URL
+  const { token } = useParams(); 
   const navigate = useNavigate();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -25,7 +25,7 @@ function ResetPassword() {
       const response = await fetch(`http://localhost:3000/api/auth/resetpassword/${token}`, {
   method: "POST",
   headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ newPassword: password }), // send newPassword instead of password
+  body: JSON.stringify({ newPassword: password }), 
 });
 
       const result = await response.json();
@@ -50,7 +50,6 @@ function ResetPassword() {
         </CardHeader>
         <CardContent>
           <form className="space-y-6" onSubmit={handleSubmit}>
-            {/* New Password Field */}
             <div className="space-y-2">
               <Label htmlFor="password">New Password</Label>
               <Input
@@ -62,7 +61,6 @@ function ResetPassword() {
               />
             </div>
 
-            {/* Confirm Password Field */}
             <div className="space-y-2">
               <Label htmlFor="confirm-password">Confirm Password</Label>
               <Input
@@ -74,11 +72,9 @@ function ResetPassword() {
               />
             </div>
 
-            {/* Error or Success Message */}
             {error && <p className="text-red-600 text-center">{error}</p>}
             {success && <p className="text-green-600 text-center">{success}</p>}
 
-            {/* Submit Button */}
             <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white">
               Reset Password
             </Button>

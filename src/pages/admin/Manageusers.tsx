@@ -85,7 +85,6 @@ const ManageUsers = () => {
     <div className="max-w-full mx-auto p-6 bg-gray-100 shadow-lg rounded-lg">
       <h2 className="text-2xl font-bold text-center mb-4 text-blue-600">Manage Users</h2>
 
-      {/* Search & Filter */}
       <div className="flex flex-row items-center justify-between mb-4">
         <input
           type="text"
@@ -106,14 +105,12 @@ const ManageUsers = () => {
         </select>
       </div>
 
-      {/* Message Alert */}
       {message && (
         <p className={`text-center mb-2 ${message.type === "success" ? "bg-green-500 text-white" : "bg-red-500 text-white"}`}>
           {message.text}
         </p>
       )}
 
-      {/* Users Table */}
       <div className="overflow-x-auto">
         <table className="w-full bg-white shadow-md rounded-lg overflow-hidden">
           <thead className="bg-blue-500 text-white">

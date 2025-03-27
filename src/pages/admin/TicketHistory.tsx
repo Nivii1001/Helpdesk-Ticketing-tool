@@ -7,8 +7,8 @@ interface Ticket {
   status: string;
   createdAt: string;
   attachments: { filename: string }[];
-  user?: { username?: string; email?: string } | null; // Handle optional user data
-  assignedTo?: { name?: string } | null; // Handle optional agent data
+  user?: { username?: string; email?: string } | null; 
+  assignedTo?: { name?: string } | null; 
 }
 
 function TicketHistory() {
@@ -115,13 +115,16 @@ function TicketHistory() {
                             ? "bg-yellow-500"
                             : "bg-red-500"
                         }`}
+                        style={{ whiteSpace: 'nowrap' }}
+
                       >
+                        
                         {ticket.status}
                       </span>
                     </td>
                     <td className="p-3 border border-gray-300">
-                      {ticket.assignedTo && ticket.assignedTo.name ? (
-                        <p className="font-medium">{ticket.assignedTo.name}</p>
+                      {ticket.assignedTo && ticket.assignedTo.username ? (
+                        <p className="font-medium">{ticket.assignedTo.username}</p>
                       ) : (
                         <p className="text-gray-500">Not Assigned</p>
                       )}
